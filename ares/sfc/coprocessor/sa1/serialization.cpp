@@ -14,6 +14,9 @@ auto SA1::serialize(serializer& s) -> void {
   s(status.vcounter);
   s(status.hcounter);
 
+  s(status.bwramBuffer1);
+  s(status.bwramBuffer2);
+
   s(dma.line);
 
   s(io.sa1_irq);

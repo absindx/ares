@@ -64,6 +64,8 @@ struct SA1 : WDC65816, Thread {
   auto writeIOCPU(n24 address, n8 data) -> void;
   auto writeIOSA1(n24 address, n8 data) -> void;
   auto writeIOShared(n24 address, n8 data) -> void;
+  auto readOpenbusSA1(n24 address, n8 data) -> n8;
+  auto writeOpenbusSA1(n24 address, n8 data) -> void;
 
   //serialization.cpp
   auto serialize(serializer&) -> void;
@@ -129,6 +131,9 @@ private:
     n16 scanlines;
     n16 vcounter;
     n16 hcounter;
+
+    n8 bwramBuffer1;
+    n8 bwramBuffer2;
   } status;
 
   struct IO {

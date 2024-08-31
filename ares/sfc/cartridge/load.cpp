@@ -247,6 +247,10 @@ auto Cartridge::loadSA1(Markup::Node node) -> void {
       loadMap(map, {&SA1::BWRAM::readCPU, &sa1.bwram}, {&SA1::BWRAM::writeCPU, &sa1.bwram});
     }
   }
+  else{
+    bus.map({&SA1::readOpenbusSA1, &sa1}, {&SA1::writeOpenbusSA1, &sa1}, "40-4f:0000-ffff");
+    bus.map({&SA1::readOpenbusSA1, &sa1}, {&SA1::writeOpenbusSA1, &sa1}, "00-3f,80-bf:6000-7fff");
+  }
 
   if(auto memory = node["memory(type=RAM,content=Internal)"]) {
     loadMemory(sa1.iram, memory);

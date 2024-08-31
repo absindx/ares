@@ -54,7 +54,16 @@ auto SA1::readIOSA1(n24 address, n8 data) -> n8 {
   case 0x2307: return io.mr.byte(1);
   case 0x2308: return io.mr.byte(2);
   case 0x2309: return io.mr.byte(3);
-  case 0x230a: return io.mr.byte(4);
+  case 0x230a: {
+    if (!io.acm){
+      // Multiplication, Division
+      return sa1.readOpenbusSA1(address, data);
+    }
+    else{
+      // Cumulative Sum
+      return io.mr.byte(4);
+    }
+  }
 
   //(OF) arithmetic overflow flag
   case 0x230b: return io.overflow << 7;
@@ -90,7 +99,7 @@ auto SA1::readIOSA1(n24 address, n8 data) -> n8 {
 
   }
 
-  return 0xff;  //unverified
+  return sa1.readOpenbusSA1(address, data);
 }
 
 auto SA1::writeIOCPU(n24 address, n8 data) -> void {

@@ -147,6 +147,8 @@ auto SA1::power() -> void {
   status.scanlines = Region::PAL() ? 312 : 262;
   status.vcounter  = 0;
   status.hcounter  = 0;
+  status.bwramBuffer1 = 0;
+  status.bwramBuffer2 = 0;
 
   dma.line = 0;
 

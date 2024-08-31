@@ -20,7 +20,8 @@ inline auto SA1::idleBranch() -> void {
 
 auto SA1::read(n24 address) -> n8 {
   r.mar = address;
-  n8 data = r.mdr;
+  //n8 data = r.mdr;
+  n8 data = status.bwramBuffer2;
 
   if((address & 0x40fe00) == 0x002200  //00-3f,80-bf:2200-23ff
   ) {
@@ -38,15 +39,28 @@ auto SA1::read(n24 address) -> n8 {
 
   if((address & 0x40e000) == 0x006000  //00-3f,80-bf:6000-7fff
   || (address & 0xe00000) == 0x400000  //40-5f:0000-ffff
-  || (address & 0xf00000) == 0x600000  //60-6f:0000-ffff
+  || (address & 0xe00000) == 0x600000  //60-7f:0000-ffff
   ) {
     step();
     step();
     if(bwram.conflict()) step();
     if(bwram.conflict()) step();
+
+    if(bwram.size() > 0){
+      data = SA1::readOpenbusSA1(address, data);
+
     if(address.bit(22) && address.bit(21)) return r.mdr = bwram.readBitmap(address, data);
     if(address.bit(22)) return r.mdr = bwram.readLinear(address, data);
     return r.mdr = bwram.readSA1(address, data);
+  }
+    else{
+      data = SA1::readOpenbusSA1(address, data);
+      if(address.bit(22) && address.bit(21)){
+        data = data & 0x0f;
+      }
+
+      return r.mdr = data;
+    }
   }
 
   if((address & 0x40f800) == 0x000000  //00-3f,80-bf:0000-07ff
@@ -59,7 +73,8 @@ auto SA1::read(n24 address) -> n8 {
   }
 
   step();
-  return data;
+  data = SA1::readOpenbusSA1(address, data);
+  return r.mdr = data;
 }
 
 auto SA1::write(n24 address, n8 data) -> void {
@@ -82,12 +97,13 @@ auto SA1::write(n24 address, n8 data) -> void {
 
   if((address & 0x40e000) == 0x006000  //00-3f,80-bf:6000-7fff
   || (address & 0xe00000) == 0x400000  //40-5f:0000-ffff
-  || (address & 0xf00000) == 0x600000  //60-6f:0000-ffff
+  || (address & 0xe00000) == 0x600000  //60-7f:0000-ffff
   ) {
     step();
     step();
     if(bwram.conflict()) step();
     if(bwram.conflict()) step();
+    SA1::writeOpenbusSA1(address, data);
     if(address.bit(22) && address.bit(21)) return bwram.writeBitmap(address, data);
     if(address.bit(22)) return bwram.writeLinear(address, data);
     return bwram.writeSA1(address, data);
@@ -147,8 +163,8 @@ auto SA1::readDisassembler(n24 address) -> n8 {
   }
 
   if((address & 0x40e000) == 0x006000  //00-3f,80-bf:6000-7fff
-  || (address & 0xf00000) == 0x400000  //40-4f:0000-ffff
-  || (address & 0xf00000) == 0x600000  //60-6f:0000-ffff
+  || (address & 0xe00000) == 0x400000  //40-5f:0000-ffff
+  || (address & 0xe00000) == 0x600000  //60-7f:0000-ffff
   ) {
     if(address.bit(22) && address.bit(21)) return bwram.readBitmap(address, data);
     if(address.bit(22)) return bwram.readLinear(address, data);
@@ -162,4 +178,24 @@ auto SA1::readDisassembler(n24 address) -> n8 {
   }
 
   return data;
+}
+
+auto SA1::readOpenbusSA1(n24 address, n8 data) -> n8 {
+  //data = status.bwramBuffer2;
+  data = status.bwramBuffer1;
+  status.bwramBuffer2 = status.bwramBuffer1;
+  return data;
+}
+auto SA1::writeOpenbusSA1(n24 address, n8 data) -> void {
+  if(address.bit(22)) {
+    // 40-5f:0000-ffff, 60-7f:0000-ffff
+    // address convertion is none
+  }
+  else{
+    //$00-3f,80-bf:6000-7fff
+    address = sa1.io.sbm * 0x2000 + (address & 0x1fff);
+  }
+
+  if(!sa1.io.swen && !sa1.io.cwen && (n18)address < 0x100 << sa1.io.bwp) return;
+  status.bwramBuffer1 = data;
 }
